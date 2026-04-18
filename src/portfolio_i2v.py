@@ -3,7 +3,7 @@
 """
 portfolio_i2v.py — SFW Portfolio I2V Generator
 ===============================================
-WAN 2.2 GGUF + Lightning LoRA (4-step) による高速 Image-to-Video 生成。
+WAN 2.2 GGUF Q5_K_M による Image-to-Video 生成。
 ポートフォリオ用 SFW サンプル動画を drafts/ フォルダから一括生成する。
 
 使い方:
@@ -17,17 +17,18 @@ WAN 2.2 GGUF + Lightning LoRA (4-step) による高速 Image-to-Video 生成。
     └── stills/  ← ソース画像コピー
 
 モデル構成:
-  UNET   : Wan2.2-I2V-A14B-HighNoise-Q8_0.gguf   (GGUF, VRAM ~9GB)
-  CLIP   : umt5-xxl-encoder-Q5_K_M.gguf           (GGUF, VRAM ~1.5GB)
+  UNET   : Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf  (GGUF, VRAM ~7GB)
+  CLIP   : umt5-xxl-encoder-Q5_K_M.gguf            (GGUF, VRAM ~1.5GB)
   Vision : wan21NSFWClipVisionH_v10.safetensors
   VAE    : wan2.2_vae.safetensors
-  LoRA①  : Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors (strength 1.0)
-  LoRA②  : smoothxxxanimation.j6bQ.safetensors (strength 0.25)
 
-生成設定 (Lightning 4-step):
-  Steps : 4   Sampler: euler   Scheduler: simple
-  CFG   : 1.0  Shift: 8.0
-  Size  : 832×1216  Duration: 5s @ 16fps = 81 frames
+  ※ Lightning LoRA (fp16) は GGUF Q5 アーキテクチャと patch_embedding チャネル数
+    (36 vs 64) が不一致のため使用不可。20-step euler に変更。
+
+生成設定 (20-step):
+  Steps : 20   Sampler: euler   Scheduler: simple
+  CFG   : 1.0  Shift: 5.0
+  Size  : 832×1216  Duration: 3s @ 16fps = 49 frames
 """
 
 import argparse
@@ -53,14 +54,12 @@ COMFYUI_OUT   = Path("D:/ComfyUI/output")
 UNET_HIGH  = "Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"   # Q5 = VRAM ~7GB, Q8 = ~10GB
 CLIP_GGUF  = "umt5-xxl-encoder-Q5_K_M.gguf"
 CLIP_VIS   = "wan21NSFWClipVisionH_v10.safetensors"
-VAE_NAME   = "wan2.2_vae.safetensors"
-LORA_LIGHT = "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors"
-LORA_SMOOTH= "smoothxxxanimation.j6bQ.safetensors"
-
-# ─── 生成設定 (Lightning 4-step) ──────────────────────────────────────────────
-STEPS    = 4
+VAE_NAME   = "wan_2.1_vae.safetensors"   # GGUF is WAN2.1 architecture (36-ch patch_embed)
+# ─── 生成設定 (20-step, no LoRA) ─────────────────────────────────────────────
+# Lightning LoRA fp16 は GGUF Q5_K_M と patch_embedding チャネル数不一致のため除外
+STEPS    = 20
 CFG      = 1.0
-SHIFT    = 8.0
+SHIFT    = 5.0
 WIDTH    = 832
 HEIGHT   = 1216
 FPS      = 16
@@ -141,12 +140,11 @@ def find_output_video(prompt_id: str) -> Path | None:
 # ─── ワークフロー構築 ─────────────────────────────────────────────────────────
 def build_sfw_i2v_workflow(image_name: str, seed: int = -1) -> dict:
     """
-    SFW WAN 2.2 Lightning I2V ワークフロー (4-step, GGUF)
+    SFW WAN 2.2 I2V ワークフロー (20-step, GGUF, LoRA なし)
 
     ノード構成:
-      10: UnetLoaderGGUF      (HighNoise GGUF)
-      11: LoraLoaderModelOnly (Lightning LoRA)
-      12: LoraLoaderModelOnly (Smooth animation LoRA)
+      10: UnetLoaderGGUF      (HighNoise Q5_K_M GGUF)
+      13: ModelSamplingSD3    (shift=5.0)
       20: CLIPLoaderGGUF      (UMT5 GGUF)
       21: VAELoader
       22: CLIPVisionLoader
@@ -158,7 +156,9 @@ def build_sfw_i2v_workflow(image_name: str, seed: int = -1) -> dict:
       60: KSamplerSelect
       61: BasicScheduler
       62: SamplerCustomAdvanced
-      70: VAEDecode
+      63: RandomNoise
+      64: CFGGuider
+      70: VAEDecodeTiled
       80: VHS_VideoCombine
     """
     import random
@@ -175,25 +175,9 @@ def build_sfw_i2v_workflow(image_name: str, seed: int = -1) -> dict:
             "class_type": "UnetLoaderGGUF",
             "inputs": {"unet_name": UNET_HIGH},
         },
-        "11": {
-            "class_type": "LoraLoaderModelOnly",
-            "inputs": {
-                "lora_name": LORA_LIGHT,
-                "strength_model": 1.0,
-                "model": ["10", 0],
-            },
-        },
-        "12": {
-            "class_type": "LoraLoaderModelOnly",
-            "inputs": {
-                "lora_name": LORA_SMOOTH,
-                "strength_model": 0.25,
-                "model": ["11", 0],
-            },
-        },
         "13": {
             "class_type": "ModelSamplingSD3",
-            "inputs": {"shift": SHIFT, "model": ["12", 0]},
+            "inputs": {"shift": SHIFT, "model": ["10", 0]},
         },
         # ── CLIP / VAE / Vision ──────────────────────────
         "20": {
@@ -344,7 +328,7 @@ def main():
         sys.exit(1)
 
     print(f"[INFO] {len(images)} 枚の画像を処理します")
-    print(f"[INFO] モデル: WAN2.2 GGUF Q8 + Lightning LoRA ({args.steps}-step)")
+    print(f"[INFO] モデル: WAN2.2 GGUF Q5_K_M ({args.steps}-step, LoRA なし)")
     print(f"[INFO] 出力: {EXAMPLES_DIR}/videos/\n")
 
     for i, img_path in enumerate(images, 1):
@@ -361,7 +345,7 @@ def main():
         # ワークフロー送信
         workflow = build_sfw_i2v_workflow(img_name)
         prompt_id = queue_prompt(workflow)
-        print(f"  → Queue: {prompt_id[:8]}... (4-step Lightning, 約10-30秒)")
+        print(f"  → Queue: {prompt_id[:8]}... ({STEPS}-step euler, 約2-5分)")
 
         # 完了待ち
         ok = wait_for_completion(prompt_id, timeout=600)   # Q5: ~2-3min per clip
