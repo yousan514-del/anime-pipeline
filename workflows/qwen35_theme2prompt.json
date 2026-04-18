@@ -1,0 +1,60 @@
+{
+  "1": {
+    "inputs": {
+      "string": "メタバース大学の仮想教室。AI社員が未来都市を見下ろす窓際で思索している。夕暮れの光。セミリアル寄りアニメ調。",
+      "strip_newlines": false
+    },
+    "class_type": "StringConstantMultiline",
+    "_meta": {
+      "title": "Theme (Japanese) — 1テーマ入力"
+    }
+  },
+  "2": {
+    "inputs": {
+      "model": "Qwen3.5-4B",
+      "prompt": [
+        "1",
+        0
+      ],
+      "system_prompt": "You are a master prompt engineer for ComfyUI / Stable Diffusion image generation. You specialize in a unified visual world called \"AI Studio\" — a semi-realistic anime style depicting a near-future metaverse university, AI staff members, virtual classrooms, and futuristic cities. The brand tone is: futuristic, quiet, intellectual, cinematic — \"you can feel a world beyond the image.\"\n\nWhen the user provides a Japanese theme, output ONE detailed English prompt for image generation that:\n- Starts with the main subject, then environment, then lighting/atmosphere, then style tags.\n- Uses booru-style comma-separated tags suitable for anime/illustrious-style checkpoints.\n- Includes quality tags at the end: `masterpiece, best quality, ultra detailed, cinematic lighting, depth of field`.\n- Avoids NSFW content.\n- Respects the AI Studio world: semi-realistic anime, muted futuristic palette, soft ambient light, architectural detail.\n\nOutput ONLY the final prompt as a single line — no markdown, no explanation, no quotes.",
+      "max_tokens": 1024,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 20,
+      "repetition_penalty": 1.05,
+      "enable_thinking": false,
+      "quantization": "FP16",
+      "keep_model_loaded": true,
+      "seed": 1,
+      "frame_count": 16
+    },
+    "class_type": "Qwen35",
+    "_meta": {
+      "title": "Qwen3.5 — 英語プロンプト生成"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Generated Prompt (English)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Thinking (空の場合あり)"
+    }
+  }
+}

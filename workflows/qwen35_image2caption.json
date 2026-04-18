@@ -1,0 +1,48 @@
+{
+  "1": {
+    "inputs": {
+      "image": "example.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "生成済み画像を読み込み"
+    }
+  },
+  "2": {
+    "inputs": {
+      "model": "Qwen3.5-4B",
+      "prompt": "この画像を見て、pixiv投稿用の日本語キャプションを書いてください。\n\n要件:\n- 冒頭3〜5行で世界観を語るポエティックな導入\n- 中盤で作品の設定や物語の断片(AI Studio世界観: メタバース大学・AI社員・未来都市・2040年代)\n- 末尾にハッシュタグを5〜8個 (#AIイラスト #メタバース #未来都市 など)\n- 全体で300〜500字\n- 「この絵の向こうに世界がある」と感じさせる、静かで知的なトーン\n- 量産感を避ける。美しさと物語性を両立\n\nキャプション本文のみを出力してください(マークダウン見出しや説明文は不要)。",
+      "system_prompt": "あなたはAI Studioというビジュアル制作スタジオの「Premium Content Editor」です。pixivでの世界観形成を担っており、単なる画像説明ではなく、読者をAI Studioの世界(未来のメタバース大学・AI社員の日常・2040年代の都市)へ誘う物語性のあるキャプションを書きます。",
+      "max_tokens": 1500,
+      "temperature": 0.85,
+      "top_p": 0.95,
+      "top_k": 20,
+      "repetition_penalty": 1.05,
+      "enable_thinking": false,
+      "quantization": "FP16",
+      "keep_model_loaded": true,
+      "seed": 1,
+      "frame_count": 16,
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "Qwen35",
+    "_meta": {
+      "title": "Qwen3.5 — 画像→日本語キャプション"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Pixiv Caption (日本語)"
+    }
+  }
+}

@@ -1,0 +1,289 @@
+{
+  "9": {
+    "inputs": {
+      "image": "input_still.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image — 元画像 (t2i出力を置く)"
+    }
+  },
+  "20": {
+    "inputs": {
+      "string": "キャラの髪が風に揺れ、背景のホログラムがわずかにドリフトする。カメラは緩やかにプッシュイン。夕暮れの光が頬を横切る。",
+      "strip_newlines": false
+    },
+    "class_type": "StringConstantMultiline",
+    "_meta": {
+      "title": "Motion Direction (日本語) — 動きの指示"
+    }
+  },
+  "21": {
+    "inputs": {
+      "model": "Qwen3.5-4B",
+      "prompt": [
+        "20",
+        0
+      ],
+      "system_prompt": "You are a motion prompt engineer for Wan 2.2 Image-to-Video. Look at the input image and combine it with the user's Japanese motion direction to output ONE English motion prompt.\n\nFormat (single natural-language sentence, not booru tags):\n- Describe camera movement (push-in / pan / static / slow zoom / parallax)\n- Describe subject motion (hair sway, breathing, gaze shift, subtle smile)\n- Describe environmental motion (wind, lighting shift, holographic flicker, particles)\n- Keep consistent with the input image's subject and setting — do NOT introduce new elements\n- End with: `cinematic motion, smooth anime animation, 16fps`\n\nConstraints:\n- SFW only.\n- Single sentence, 40-80 words, no markdown, no quotes.\n- Describe MOTION only, not static content (Wan already sees the image).",
+      "max_tokens": 400,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 20,
+      "repetition_penalty": 1.05,
+      "enable_thinking": false,
+      "quantization": "FP16",
+      "keep_model_loaded": false,
+      "seed": 1,
+      "frame_count": 16,
+      "image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "Qwen35",
+    "_meta": {
+      "title": "Qwen 3.5 VL — 画像+日本語指示→英語モーションプロンプト"
+    }
+  },
+  "22": {
+    "inputs": {
+      "text": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Generated Motion Prompt (確認用)"
+    }
+  },
+  "1": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Wan 2.2 I2V — High Noise"
+    }
+  },
+  "2": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Wan 2.2 I2V — Low Noise"
+    }
+  },
+  "3": {
+    "inputs": {
+      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors",
+      "strength_model": 1.0,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lightning LoRA — High (4 steps)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
+      "strength_model": 1.0,
+      "model": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lightning LoRA — Low (4 steps)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "CLIPLoader — umt5 xxl fp8"
+    }
+  },
+  "6": {
+    "inputs": {
+      "vae_name": "wan2.2_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "VAELoader — Wan 2.2 VAE"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": [
+        "21",
+        0
+      ],
+      "clip": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive (Qwen出力を自動流入)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "text": "static, still, frozen, jitter, flicker, artifacts, low quality, distorted, bad anatomy, morphing face, identity drift",
+      "clip": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative"
+    }
+  },
+  "10": {
+    "inputs": {
+      "width": 720,
+      "height": 1024,
+      "length": 81,
+      "batch_size": 1,
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "8",
+        0
+      ],
+      "vae": [
+        "6",
+        0
+      ],
+      "start_image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "Wan I2V — 81フレーム(約5秒/16fps)"
+    }
+  },
+  "11": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 42,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "3",
+        0
+      ],
+      "positive": [
+        "10",
+        0
+      ],
+      "negative": [
+        "10",
+        1
+      ],
+      "latent_image": [
+        "10",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler — High Noise (step 0→4)"
+    }
+  },
+  "12": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 42,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 4,
+      "end_at_step": 8,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "10",
+        0
+      ],
+      "negative": [
+        "10",
+        1
+      ],
+      "latent_image": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler — Low Noise (step 4→8)"
+    }
+  },
+  "13": {
+    "inputs": {
+      "samples": [
+        "12",
+        0
+      ],
+      "vae": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "14": {
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "pixiv/i2v_wan22",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine — MP4出力 (16fps)"
+    }
+  }
+}

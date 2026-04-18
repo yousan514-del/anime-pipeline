@@ -1,0 +1,156 @@
+{
+  "20": {
+    "inputs": {
+      "string": "メタバース大学の仮想教室。AI社員のFuture Researcherが窓際で未来都市を見下ろしている。夕暮れの光。セミリアル寄りアニメ調。",
+      "strip_newlines": false
+    },
+    "class_type": "StringConstantMultiline",
+    "_meta": {
+      "title": "Theme (日本語) — ここだけ書き換える"
+    }
+  },
+  "21": {
+    "inputs": {
+      "model": "Qwen3.5-4B",
+      "prompt": [
+        "20",
+        0
+      ],
+      "system_prompt": "You are a prompt engineer for SDXL Illustrious anime checkpoints. The user gives a Japanese theme. Output ONE English prompt as booru-style comma-separated tags.\n\nFormat (strict order):\n1. Quality: `masterpiece, best quality, ultra detailed, cinematic lighting, depth of field`\n2. Subject (1girl/1boy/2girls, character details, outfit, expression)\n3. Pose / action\n4. Environment (metaverse university, virtual classroom, futuristic city 2040s, holographic displays)\n5. Lighting / atmosphere (sunset, rim light, volumetric fog)\n6. Style tags: `semi-realistic anime style, architectural detail`\n\nConstraints:\n- SFW only.\n- Single line, no markdown, no quotes, no explanation.\n- ~60-100 tags total.\n- Respect the AI Studio world (futuristic, quiet, intellectual).",
+      "max_tokens": 800,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 20,
+      "repetition_penalty": 1.05,
+      "enable_thinking": false,
+      "quantization": "FP16",
+      "keep_model_loaded": false,
+      "seed": 1,
+      "frame_count": 16
+    },
+    "class_type": "Qwen35",
+    "_meta": {
+      "title": "Qwen 3.5 — 日本語→SDXLプロンプト生成"
+    }
+  },
+  "22": {
+    "inputs": {
+      "text": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Generated Prompt (確認用)"
+    }
+  },
+  "1": {
+    "inputs": {
+      "ckpt_name": "waiIllustriousSDXL_v160.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint — WAI Illustrious v1.60"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": [
+        "21",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive (Qwen出力を自動流入)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "worst quality, low quality, jpeg artifacts, blurry, bad anatomy, bad hands, extra fingers, missing fingers, watermark, signature, text, logo, deformed, disfigured, ugly, duplicate, nsfw",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "4": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Latent — 832x1216 (pixiv縦長)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "seed": 42,
+      "steps": 28,
+      "cfg": 5.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "karras",
+      "denoise": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "6": {
+    "inputs": {
+      "samples": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "pixiv/t2i_illustrious",
+      "images": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  }
+}

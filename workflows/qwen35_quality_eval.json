@@ -1,0 +1,60 @@
+{
+  "1": {
+    "inputs": {
+      "image": "example.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "評価対象画像"
+    }
+  },
+  "2": {
+    "inputs": {
+      "model": "Qwen3.5-4B",
+      "prompt": "この画像を AI Studio (セミリアル寄りアニメ調・メタバース大学世界観) の品質基準で評価してください。\n\n評価観点 (各10点満点):\n1. 構図・フレーミング\n2. 光と陰影 (シネマティック性)\n3. キャラ描画 (崩れ・破綻の有無)\n4. 世界観適合度 (未来都市・メタバース感)\n5. 色彩・空気感\n6. ディテール密度\n7. pixiv投稿適性 (量産感がないか)\n\n出力フォーマット (厳守):\n---\n【総合スコア】XX/70\n【採用判定】採用 / 改善必要 / 不採用\n\n【観点別スコア】\n1. 構図: X/10 — 理由\n2. 光と陰影: X/10 — 理由\n3. キャラ描画: X/10 — 理由\n4. 世界観適合: X/10 — 理由\n5. 色彩: X/10 — 理由\n6. ディテール: X/10 — 理由\n7. pixiv適性: X/10 — 理由\n\n【改善プロンプト案】\n次回生成時に追加/変更すべき英語プロンプト要素を3〜5個 (booruタグ形式)\n\n【削除プロンプト案】\n今回の問題を引き起こした可能性のある要素を1〜3個\n---",
+      "system_prompt": "あなたはAI Studioの「Style Director」です。画風管理と品質ゲートを担当し、pixiv/Patreon投稿に足る作品のみを通過させます。厳しめに、しかし建設的に評価してください。",
+      "max_tokens": 2048,
+      "temperature": 0.4,
+      "top_p": 0.9,
+      "top_k": 20,
+      "repetition_penalty": 1.05,
+      "enable_thinking": true,
+      "quantization": "FP16",
+      "keep_model_loaded": true,
+      "seed": 1,
+      "frame_count": 16,
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "Qwen35",
+    "_meta": {
+      "title": "Qwen3.5 — 品質評価 (Style Director)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "評価レポート"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Thinking (思考過程)"
+    }
+  }
+}
